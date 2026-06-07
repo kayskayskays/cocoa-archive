@@ -1,9 +1,17 @@
+use std::fmt::{Display, Formatter};
 use crate::object::NsObject;
 use crate::serializer::{CocoaSerializer, Key, Value};
+use crate::writer::Base64Writer;
 use plist::Uid;
+use std::io::Write;
 
 enum NsArchiver {
     NsKeyedArchiver,
+}
+
+enum ArchiveFormat {
+    Base64,
+    Binary
 }
 
 #[derive(Debug)]
@@ -11,8 +19,8 @@ enum ArchiveError {
     Plist(plist::Error),
 }
 
-impl std::fmt::Display for ArchiveError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for ArchiveError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             ArchiveError::Plist(err) => write!(f, "{}", err),
         }
@@ -24,7 +32,8 @@ impl NsArchiver {
         &self,
         object: T,
         serializer: U,
-        dst: impl std::io::Write,
+        format: ArchiveFormat,
+        dst: impl Write,
     ) -> Result<(), ArchiveError>
     where
         T: NsObject,
@@ -39,9 +48,12 @@ impl NsArchiver {
 
         let root = Value::Dictionary(store);
         let plist = plist::Value::from(root);
-        plist
-            .to_writer_binary(dst)
-            .map_err(|err| ArchiveError::Plist(err))
+
+        if let ArchiveFormat::Base64 = format {
+            plist.to_writer_binary(Base64Writer::new(dst))
+        } else {
+            plist.to_writer_binary(dst)
+        }.map_err(|err| ArchiveError::Plist(err))
     }
 }
 
@@ -68,14 +80,15 @@ impl Archiver for NsArchiver {
         &self,
         object: T,
         serializer: U,
-        dst: impl std::io::Write,
+        format: ArchiveFormat,
+        dst: impl Write,
     ) -> Result<(), ArchiveError>
     where
         T: NsObject,
         U: CocoaSerializer<T>,
     {
         match self {
-            NsArchiver::NsKeyedArchiver => self.ns_keyed_archive(object, serializer, dst),
+            NsArchiver::NsKeyedArchiver => self.ns_keyed_archive(object, serializer, format, dst),
         }
     }
 }
@@ -85,7 +98,8 @@ trait Archiver {
         &self,
         object: T,
         serializer: U,
-        dst: impl std::io::Write,
+        format: ArchiveFormat,
+        dst: impl Write,
     ) -> Result<(), ArchiveError>
     where
         T: NsObject,

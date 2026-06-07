@@ -2,14 +2,14 @@ use std::io::Write;
 
 const BASE_64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-struct Base64Writer<T: Write> {
+pub(crate) struct Base64Writer<T: Write> {
     inner: T,
     buffer: [u8; 3],
     offset: usize,
 }
 
 impl<T: Write> Base64Writer<T> {
-    fn new(inner: T) -> Self {
+    pub(crate) fn new(inner: T) -> Self {
         Self {
             inner,
             buffer: [0; 3],
