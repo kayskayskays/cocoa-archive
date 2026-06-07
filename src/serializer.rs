@@ -66,7 +66,7 @@ pub(crate) trait CocoaSerializer<T: NsObject> {
         let mut top_store = KvStore::new();
         top_store.insert(Key::Root, Value::Ref(root_id));
 
-        store.insert(Key::Top, Value::Ref(root_id));
+        store.insert(Key::Top, Value::Dictionary(top_store));
 
         store
     }
