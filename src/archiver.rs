@@ -1,8 +1,8 @@
-use std::fmt::{Display, Formatter};
 use crate::object::NsObject;
 use crate::serializer::{CocoaSerializer, Key, Value};
 use crate::writer::Base64Writer;
 use plist::Uid;
+use std::fmt::{Display, Formatter};
 use std::io::Write;
 
 enum NsArchiver {
@@ -11,7 +11,7 @@ enum NsArchiver {
 
 enum ArchiveFormat {
     Base64,
-    Binary
+    Binary,
 }
 
 #[derive(Debug)]
@@ -53,7 +53,8 @@ impl NsArchiver {
             plist.to_writer_binary(Base64Writer::new(dst))
         } else {
             plist.to_writer_binary(dst)
-        }.map_err(|err| ArchiveError::Plist(err))
+        }
+        .map_err(|err| ArchiveError::Plist(err))
     }
 }
 

@@ -22,10 +22,12 @@ impl<T: Write> Base64Writer<T> {
     }
 
     fn flush_buffer(&mut self) -> std::io::Result<()> {
-        let n = ((self.buffer[0] as u32) << 16) | ((self.buffer[1] as u32) << 8) | (self.buffer[2] as u32);
+        let n = ((self.buffer[0] as u32) << 16)
+            | ((self.buffer[1] as u32) << 8)
+            | (self.buffer[2] as u32);
 
         if self.offset == 0 {
-            return Ok(())
+            return Ok(());
         }
 
         let char_1 = BASE_64[(n >> 18) as usize];
