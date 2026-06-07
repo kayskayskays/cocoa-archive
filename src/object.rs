@@ -1,12 +1,12 @@
+pub(crate) trait NsObject {
+    fn class() -> &'static str;
+    fn classes() -> Vec<&'static str>;
+}
+
 pub(crate) struct NsFont {
     pub(crate) name: String,
     pub(crate) size: f32,
     pub(crate) flags: u32,
-}
-
-pub(crate) trait NsObject {
-    fn class() -> &'static str;
-    fn classes() -> Vec<&'static str>;
 }
 
 impl NsFont {
