@@ -11,6 +11,7 @@ pub enum Key {
     NsfFlags,
 
     Classes,
+    Classname,
     Class,
     Objects,
 
@@ -39,6 +40,7 @@ impl From<Key> for String {
             Key::NsfFlags => String::from("NSfFlags"),
 
             Key::Classes => String::from("$classes"),
+            Key::Classname => String::from("$classname"),
             Key::Class => String::from("$class"),
             Key::Objects => String::from("$objects"),
 
@@ -106,7 +108,7 @@ where
 
     let mut classes_store = KvStore::new();
     classes_store.insert(Key::Classes, classes_value);
-    classes_store.insert(Key::Class, class_value);
+    classes_store.insert(Key::Classname, class_value);
 
     Value::Dictionary(classes_store)
 }
