@@ -1,11 +1,11 @@
 use crate::object::{NsFont, NsObject};
 use std::collections::HashMap;
 
-pub(crate) type KvStore = HashMap<Key, Value>;
+pub type KvStore = HashMap<Key, Value>;
 type Uid = u64;
 
 #[derive(Eq, Hash, PartialEq)]
-pub(crate) enum Key {
+pub enum Key {
     NsName,
     NsSize,
     NsfFlags,
@@ -22,7 +22,7 @@ pub(crate) enum Key {
 }
 
 #[derive(PartialEq)]
-pub(crate) enum Value {
+pub enum Value {
     Integer(i32),
     Real(f64),
     String(String),
