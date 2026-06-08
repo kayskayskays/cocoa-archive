@@ -17,7 +17,7 @@ impl<T: Write> Base64Writer<T> {
         }
     }
 
-    fn finish(&mut self) -> std::io::Result<()> {
+    pub(crate) fn finish(&mut self) -> std::io::Result<()> {
         self.flush_buffer()
     }
 

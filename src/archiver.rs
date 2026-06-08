@@ -38,11 +38,16 @@ impl NsArchiver {
         let plist = plist::Value::from(root);
 
         if let ArchiveFormat::Base64 = format {
-            plist.to_writer_binary(Base64Writer::new(dst))
+            let mut writer = Base64Writer::new(dst);
+            plist
+                .to_writer_binary(&mut writer)
+                .map_err(|err| ArchiveError::Plist(err))?;
+            writer.finish().map_err(|err| ArchiveError::Base64(err))
         } else {
-            plist.to_writer_binary(dst)
+            plist
+                .to_writer_binary(dst)
+                .map_err(|err| ArchiveError::Plist(err))
         }
-        .map_err(|err| ArchiveError::Plist(err))
     }
 }
 
@@ -102,12 +107,14 @@ impl From<Value> for plist::Value {
 #[derive(Debug)]
 pub enum ArchiveError {
     Plist(plist::Error),
+    Base64(std::io::Error),
 }
 
 impl Display for ArchiveError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             ArchiveError::Plist(err) => write!(f, "{}", err),
+            ArchiveError::Base64(err) => write!(f, "{}", err),
         }
     }
 }
