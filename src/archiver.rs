@@ -1,3 +1,4 @@
+use std::error::Error;
 use crate::object::NsObject;
 use crate::serializer::{CocoaSerializer, Key, Value};
 use crate::writer::Base64Writer;
@@ -15,7 +16,7 @@ enum ArchiveFormat {
 }
 
 #[derive(Debug)]
-enum ArchiveError {
+pub enum ArchiveError {
     Plist(plist::Error),
 }
 
@@ -26,6 +27,8 @@ impl Display for ArchiveError {
         }
     }
 }
+
+impl Error for ArchiveError {}
 
 impl NsArchiver {
     fn ns_keyed_archive<T, U>(
