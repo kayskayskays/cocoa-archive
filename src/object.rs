@@ -1,9 +1,9 @@
-pub(crate) trait NsObject {
+pub trait NsObject {
     fn class() -> &'static str;
     fn classes() -> Vec<&'static str>;
 }
 
-pub(crate) struct NsFont {
+pub struct NsFont {
     pub(crate) name: String,
     pub(crate) size: f32,
     pub(crate) flags: u32,
@@ -12,7 +12,7 @@ pub(crate) struct NsFont {
 impl NsFont {
     const DEFAULT_FLAGS: u32 = 16;
 
-    fn new(name: String, size: f32) -> Self {
+    pub fn new(name: String, size: f32) -> Self {
         Self {
             name,
             size,

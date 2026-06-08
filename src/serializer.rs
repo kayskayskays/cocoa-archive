@@ -4,16 +4,6 @@ use std::collections::HashMap;
 pub(crate) type KvStore = HashMap<Key, Value>;
 type Uid = u64;
 
-#[derive(PartialEq)]
-pub(crate) enum Value {
-    Integer(i32),
-    Real(f64),
-    String(String),
-    Ref(Uid),
-    Array(Vec<Value>),
-    Dictionary(KvStore),
-}
-
 #[derive(Eq, Hash, PartialEq)]
 pub(crate) enum Key {
     NsName,
@@ -29,6 +19,16 @@ pub(crate) enum Key {
 
     Archiver,
     Version,
+}
+
+#[derive(PartialEq)]
+pub(crate) enum Value {
+    Integer(i32),
+    Real(f64),
+    String(String),
+    Ref(Uid),
+    Array(Vec<Value>),
+    Dictionary(KvStore),
 }
 
 impl From<Key> for String {
@@ -51,7 +51,7 @@ impl From<Key> for String {
     }
 }
 
-pub(crate) trait CocoaSerializer<T: NsObject> {
+pub trait CocoaSerializer<T: NsObject> {
     fn serialize(&self, object: T) -> KvStore {
         let mut store = KvStore::new();
 
@@ -74,7 +74,7 @@ pub(crate) trait CocoaSerializer<T: NsObject> {
     fn construct_object_data(&self, object: &T, objects: &mut Vec<Value>);
 }
 
-pub(crate) struct NsFontSerializer;
+pub struct NsFontSerializer;
 impl CocoaSerializer<NsFont> for NsFontSerializer {
     fn construct_object_data(&self, object: &NsFont, objects: &mut Vec<Value>) {
         let mut store = KvStore::new();

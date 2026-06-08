@@ -1,34 +1,19 @@
-use std::error::Error;
 use crate::object::NsObject;
 use crate::serializer::{CocoaSerializer, Key, Value};
 use crate::writer::Base64Writer;
 use plist::Uid;
+use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Write;
 
-enum NsArchiver {
+pub enum NsArchiver {
     NsKeyedArchiver,
 }
 
-enum ArchiveFormat {
+pub enum ArchiveFormat {
     Base64,
     Binary,
 }
-
-#[derive(Debug)]
-pub enum ArchiveError {
-    Plist(plist::Error),
-}
-
-impl Display for ArchiveError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ArchiveError::Plist(err) => write!(f, "{}", err),
-        }
-    }
-}
-
-impl Error for ArchiveError {}
 
 impl NsArchiver {
     fn ns_keyed_archive<T, U>(
@@ -61,22 +46,17 @@ impl NsArchiver {
     }
 }
 
-impl From<Value> for plist::Value {
-    fn from(value: Value) -> Self {
-        match value {
-            Value::Integer(integer) => plist::Value::Integer(integer.into()),
-            Value::Real(real) => plist::Value::Real(real),
-            Value::String(string) => plist::Value::String(string),
-            Value::Ref(uid) => plist::Value::Uid(Uid::new(uid)),
-            Value::Array(array) => plist::Value::Array(array.into_iter().map(Self::from).collect()),
-            Value::Dictionary(store) => plist::Value::Dictionary(
-                store
-                    .into_iter()
-                    .map(|(key, value)| (String::from(key), Self::from(value)))
-                    .collect(),
-            ),
-        }
-    }
+pub trait Archiver {
+    fn archive<T, U>(
+        &self,
+        object: T,
+        serializer: U,
+        format: ArchiveFormat,
+        dst: impl Write,
+    ) -> Result<(), ArchiveError>
+    where
+        T: NsObject,
+        U: CocoaSerializer<T>;
 }
 
 impl Archiver for NsArchiver {
@@ -97,19 +77,39 @@ impl Archiver for NsArchiver {
     }
 }
 
-trait Archiver {
-    fn archive<T, U>(
-        &self,
-        object: T,
-        serializer: U,
-        format: ArchiveFormat,
-        dst: impl Write,
-    ) -> Result<(), ArchiveError>
-    where
-        T: NsObject,
-        U: CocoaSerializer<T>;
-}
-
 struct ArchiverOptions {
     version: u32,
 }
+
+impl From<Value> for plist::Value {
+    fn from(value: Value) -> Self {
+        match value {
+            Value::Integer(integer) => plist::Value::Integer(integer.into()),
+            Value::Real(real) => plist::Value::Real(real),
+            Value::String(string) => plist::Value::String(string),
+            Value::Ref(uid) => plist::Value::Uid(Uid::new(uid)),
+            Value::Array(array) => plist::Value::Array(array.into_iter().map(Self::from).collect()),
+            Value::Dictionary(store) => plist::Value::Dictionary(
+                store
+                    .into_iter()
+                    .map(|(key, value)| (String::from(key), Self::from(value)))
+                    .collect(),
+            ),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum ArchiveError {
+    Plist(plist::Error),
+}
+
+impl Display for ArchiveError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ArchiveError::Plist(err) => write!(f, "{}", err),
+        }
+    }
+}
+
+impl Error for ArchiveError {}
