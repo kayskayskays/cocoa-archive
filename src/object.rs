@@ -31,4 +31,34 @@ impl NsObject for NsFont {
     }
 }
 
-pub(crate) struct NsColor {}
+pub struct NsColor {
+    pub(crate) red: f32,
+    pub(crate) green: f32,
+    pub(crate) blue: f32,
+    pub(crate) alpha: f32,
+}
+
+impl NsObject for NsColor {
+    fn class() -> &'static str {
+        "NSColor"
+    }
+
+    fn classes() -> Vec<&'static str> {
+        vec!["NSColor", "NSObject"]
+    }
+}
+
+impl From<NsColor> for String {
+    fn from(value: NsColor) -> Self {
+        String::from(&value)
+    }
+}
+
+impl From<&NsColor> for String {
+    fn from(value: &NsColor) -> Self {
+        format!(
+            "{} {} {} {}",
+            value.red, value.green, value.blue, value.alpha
+        )
+    }
+}
