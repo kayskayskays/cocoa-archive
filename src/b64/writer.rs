@@ -1,6 +1,5 @@
 use std::io::Write;
-
-const BASE_64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+use crate::b64::encode;
 
 pub(crate) struct Base64Writer<T: Write> {
     inner: T,
@@ -30,10 +29,10 @@ impl<T: Write> Base64Writer<T> {
             return Ok(());
         }
 
-        let char_1 = BASE_64[(n >> 18) as usize];
-        let char_2 = BASE_64[((n >> 12) & 0b11_1111) as usize];
-        let char_3 = BASE_64[((n >> 6) & 0b11_1111) as usize];
-        let char_4 = BASE_64[(n & 0b11_1111) as usize];
+        let char_1 = encode((n >> 18) as u8);
+        let char_2 = encode(((n >> 12) & 0b11_1111) as u8);
+        let char_3 = encode(((n >> 6) & 0b11_1111) as u8);
+        let char_4 = encode((n & 0b11_1111) as u8);
 
         let mut buf = [char_1, char_2, char_3, char_4];
 
