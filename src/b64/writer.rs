@@ -1,5 +1,5 @@
+use crate::b64::encode_bytes;
 use std::io::Write;
-use crate::b64::encode;
 
 pub(crate) struct Base64Writer<T: Write> {
     inner: T,
@@ -21,27 +21,12 @@ impl<T: Write> Base64Writer<T> {
     }
 
     fn flush_buffer(&mut self) -> std::io::Result<()> {
-        let n = ((self.buffer[0] as u32) << 16)
-            | ((self.buffer[1] as u32) << 8)
-            | (self.buffer[2] as u32);
-
         if self.offset == 0 {
             return Ok(());
         }
 
-        let char_1 = encode((n >> 18) as u8);
-        let char_2 = encode(((n >> 12) & 0b11_1111) as u8);
-        let char_3 = encode(((n >> 6) & 0b11_1111) as u8);
-        let char_4 = encode((n & 0b11_1111) as u8);
-
-        let mut buf = [char_1, char_2, char_3, char_4];
-
-        let padding = 3 - self.offset;
-        for idx in 0..padding {
-            buf[buf.len() - 1 - idx] = b'=';
-        }
-
-        let result = self.inner.write_all(buf.as_slice());
+        let encoded = encode_bytes(&self.buffer[0..self.offset]);
+        let result = self.inner.write_all(encoded.as_slice());
         self.offset = 0;
         self.buffer = [0; 3];
         result
