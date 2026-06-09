@@ -1,4 +1,3 @@
-use crate::b64::encode_bytes;
 use crate::object::{NsColor, NsFont, NsObject};
 use std::collections::HashMap;
 
@@ -23,6 +22,9 @@ pub enum Key {
     Version,
 
     NsRgb,
+    NsLinearExposure,
+    NsComponents,
+    NsColorSpace,
 }
 
 #[derive(PartialEq)]
@@ -55,6 +57,9 @@ impl From<Key> for String {
             Key::Version => String::from("$version"),
 
             Key::NsRgb => String::from("NSRGB"),
+            Key::NsLinearExposure => String::from("NSLinearExposure"),
+            Key::NsComponents => String::from("NSComponents"),
+            Key::NsColorSpace => String::from("NSColorSpace"),
         }
     }
 }
@@ -107,8 +112,13 @@ impl CocoaSerializer<NsColor> for NsColorSerializer {
         _objects: &mut Vec<Value>,
         root_store: &mut KvStore,
     ) {
-        let b64_color = encode_bytes(String::from(object).as_bytes());
-        root_store.insert(Key::NsRgb, Value::Data(b64_color));
+        let mut color_string = String::from(object);
+        color_string.push('\0');
+        root_store.insert(Key::NsRgb, Value::Data(color_string.into_bytes()));
+
+        root_store.insert(Key::NsColorSpace, Value::Integer(1));
+        root_store.insert(Key::NsLinearExposure, Value::Data(b"0".to_vec()));
+        root_store.insert(Key::NsComponents, Value::Data(String::from(object).into_bytes()));
     }
 }
 
