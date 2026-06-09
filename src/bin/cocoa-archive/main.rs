@@ -1,10 +1,10 @@
 use crate::cli::Command::Font;
 use crate::cli::parse_command;
-use cocoa_archive::archiver::ArchiveFormat::Base64;
-use cocoa_archive::archiver::NsArchiver::NsKeyedArchiver;
-use cocoa_archive::archiver::{ArchiveError, Archiver};
-use cocoa_archive::object::NsFont;
-use cocoa_archive::serializer::NsFontSerializer;
+use cocoa_archive::{
+    archiver::{ArchiveError, ArchiveFormat::Base64, Archiver, NsArchiver::NsKeyedArchiver},
+    object::NsFont,
+    serializer::NsFontSerializer,
+};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 

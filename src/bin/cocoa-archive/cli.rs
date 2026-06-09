@@ -6,12 +6,9 @@ pub enum Command {
 
 pub fn parse_command() -> Result<Command, String> {
     let mut args = env::args().skip(1);
-    let command = args.next().ok_or("missing command")?;
-    parse_command_0(command, args)
-}
 
-fn parse_command_0(cmd: String, args: impl Iterator<Item = String>) -> Result<Command, String> {
-    match cmd.as_str() {
+    let command = args.next().ok_or("missing command")?;
+    match command.as_str() {
         "font" => parse_font(args),
         cmd => Err(format!("unknown command: {}", cmd)),
     }
