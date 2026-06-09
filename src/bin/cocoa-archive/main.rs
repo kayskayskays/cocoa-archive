@@ -1,4 +1,4 @@
-use crate::cli::Command::Font;
+use crate::cli::Command::{Color, Font};
 use crate::cli::parse_command;
 use cocoa_archive::{
     archiver::{ArchiveError, ArchiveFormat::Base64, Archiver, NsArchiver::NsKeyedArchiver},
@@ -7,6 +7,8 @@ use cocoa_archive::{
 };
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use cocoa_archive::object::NsColor;
+use cocoa_archive::serializer::NsColorSerializer;
 
 mod cli;
 
@@ -37,6 +39,13 @@ fn main() -> Result<(), CliError> {
         Font { name, size } => {
             let object = NsFont::new(name, size);
             let serializer = NsFontSerializer;
+            archiver
+                .archive(object, serializer, Base64, stdout.lock())
+                .map_err(CliError::Archive)
+        }
+        Color { red, green, blue, alpha } => {
+            let object = NsColor::new(red, green, blue, alpha);
+            let serializer = NsColorSerializer;
             archiver
                 .archive(object, serializer, Base64, stdout.lock())
                 .map_err(CliError::Archive)
