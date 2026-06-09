@@ -1,4 +1,5 @@
-use crate::object::{NsFont, NsObject};
+use crate::b64::encode_bytes;
+use crate::object::{NsColor, NsFont, NsObject};
 use std::collections::HashMap;
 
 pub type KvStore = HashMap<Key, Value>;
@@ -20,6 +21,8 @@ pub enum Key {
 
     Archiver,
     Version,
+
+    NsRgb,
 }
 
 #[derive(PartialEq)]
@@ -27,6 +30,7 @@ pub enum Value {
     Integer(i32),
     Real(f64),
     String(String),
+    Data(Vec<u8>),
     Ref(Uid),
     Array(Vec<Value>),
     Dictionary(KvStore),
@@ -49,6 +53,8 @@ impl From<Key> for String {
 
             Key::Archiver => String::from("$archiver"),
             Key::Version => String::from("$version"),
+
+            Key::NsRgb => String::from("NSRGB"),
         }
     }
 }
@@ -60,7 +66,7 @@ pub trait CocoaSerializer<T: NsObject> {
         let mut objects = Vec::new();
         objects.push(Value::String(String::from("$null")));
 
-        self.construct_object_data(&object, &mut objects);
+        populate_store(self, &object, &mut objects);
         let root_id = (objects.len() - 1) as u64;
 
         store.insert(Key::Objects, Value::Array(objects));
@@ -73,26 +79,52 @@ pub trait CocoaSerializer<T: NsObject> {
         store
     }
 
-    fn construct_object_data(&self, object: &T, objects: &mut Vec<Value>);
+    fn construct_object_data(&self, object: &T, objects: &mut Vec<Value>, root_store: &mut KvStore);
 }
 
 pub struct NsFontSerializer;
 impl CocoaSerializer<NsFont> for NsFontSerializer {
-    fn construct_object_data(&self, object: &NsFont, objects: &mut Vec<Value>) {
-        let mut store = KvStore::new();
-
-        let class_metadata = construct_class_metadata::<NsFont>();
-        store.insert(Key::Class, intern_value(class_metadata, objects));
-        store.insert(
+    fn construct_object_data(
+        &self,
+        object: &NsFont,
+        objects: &mut Vec<Value>,
+        root_store: &mut KvStore,
+    ) {
+        root_store.insert(
             Key::NsName,
             intern_value(Value::String(object.name.clone()), objects),
         );
-        store.insert(Key::NsSize, Value::Real(object.size as f64));
-        store.insert(Key::NsfFlags, Value::Integer(object.flags as i32));
-
-        objects.push(Value::Dictionary(store));
+        root_store.insert(Key::NsSize, Value::Real(object.size as f64));
+        root_store.insert(Key::NsfFlags, Value::Integer(object.flags as i32));
     }
 }
+
+pub struct NsColorSerializer;
+impl CocoaSerializer<NsColor> for NsColorSerializer {
+    fn construct_object_data(
+        &self,
+        object: &NsColor,
+        _objects: &mut Vec<Value>,
+        root_store: &mut KvStore,
+    ) {
+        let b64_color = encode_bytes(String::from(object).as_bytes());
+        root_store.insert(Key::NsRgb, Value::Data(b64_color));
+    }
+}
+
+fn populate_store<S, T>(serializer: &S, object: &T, objects: &mut Vec<Value>)
+where
+    S: CocoaSerializer<T> + ?Sized,
+    T: NsObject,
+{
+    let mut root_store = KvStore::new();
+    let class_metadata = construct_class_metadata::<T>();
+    root_store.insert(Key::Class, intern_value(class_metadata, objects));
+
+    serializer.construct_object_data(object, objects, &mut root_store);
+    objects.push(Value::Dictionary(root_store));
+}
+
 fn construct_class_metadata<T>() -> Value
 where
     T: NsObject,

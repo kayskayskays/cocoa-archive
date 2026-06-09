@@ -1,6 +1,6 @@
+use crate::b64::writer::Base64Writer;
 use crate::object::NsObject;
 use crate::serializer::{CocoaSerializer, Key, Value};
-use crate::writer::Base64Writer;
 use plist::Uid;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -41,12 +41,10 @@ impl NsArchiver {
             let mut writer = Base64Writer::new(dst);
             plist
                 .to_writer_binary(&mut writer)
-                .map_err(|err| ArchiveError::Plist(err))?;
-            writer.finish().map_err(|err| ArchiveError::Base64(err))
+                .map_err(ArchiveError::Plist)?;
+            writer.finish().map_err(ArchiveError::Base64)
         } else {
-            plist
-                .to_writer_binary(dst)
-                .map_err(|err| ArchiveError::Plist(err))
+            plist.to_writer_binary(dst).map_err(ArchiveError::Plist)
         }
     }
 }
@@ -92,6 +90,7 @@ impl From<Value> for plist::Value {
             Value::Integer(integer) => plist::Value::Integer(integer.into()),
             Value::Real(real) => plist::Value::Real(real),
             Value::String(string) => plist::Value::String(string),
+            Value::Data(data) => plist::Value::Data(data),
             Value::Ref(uid) => plist::Value::Uid(Uid::new(uid)),
             Value::Array(array) => plist::Value::Array(array.into_iter().map(Self::from).collect()),
             Value::Dictionary(store) => plist::Value::Dictionary(
