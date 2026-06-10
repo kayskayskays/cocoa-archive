@@ -1,4 +1,4 @@
-use crate::b64::encode_bytes;
+use crate::b64::encoder::encode_bytes;
 use std::io::Write;
 
 pub(crate) struct Base64Writer<T: Write> {

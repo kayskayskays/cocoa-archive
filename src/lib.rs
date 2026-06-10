@@ -1,4 +1,8 @@
-pub mod archiver;
+mod archiver;
 mod b64;
-pub mod object;
-pub mod serializer;
+mod object;
+mod serializer;
+
+pub use archiver::{Archiver, ArchiveError, ArchiveFormat, NsArchiver};
+pub use object::{NsObject, NsColor, NsFont};
+pub use serializer::{NsFontSerializer, NsColorSerializer};

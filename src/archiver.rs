@@ -6,13 +6,13 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Write;
 
-pub enum NsArchiver {
-    NsKeyedArchiver,
-}
-
 pub enum ArchiveFormat {
     Base64,
     Binary,
+}
+
+pub enum NsArchiver {
+    NsKeyedArchiver,
 }
 
 impl NsArchiver {
@@ -80,10 +80,6 @@ impl Archiver for NsArchiver {
     }
 }
 
-struct ArchiverOptions {
-    version: u32,
-}
-
 impl From<Value> for plist::Value {
     fn from(value: Value) -> Self {
         match value {
@@ -112,8 +108,8 @@ pub enum ArchiveError {
 impl Display for ArchiveError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArchiveError::Plist(err) => write!(f, "{}", err),
-            ArchiveError::Base64(err) => write!(f, "{}", err),
+            ArchiveError::Plist(err) => write!(f, "Encountered error while serializing plist: {}", err),
+            ArchiveError::Base64(err) => write!(f, "Encountered error while serializing base64 encoded plist data: {}", err),
         }
     }
 }
