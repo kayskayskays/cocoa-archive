@@ -83,8 +83,9 @@ pub(crate) trait CocoaSerializer<T: NsObject> {
         let mut store = HashMap::new();
 
         let mut objects = Vec::new();
-        objects.push(Value::String(String::from("$null")));
 
+        // The first object in the archive is always the `$null` object.
+        objects.push(Value::String(String::from("$null")));
         populate_store(self, &object, &mut objects);
         let root_id = (objects.len() - 1) as u64;
 
@@ -122,6 +123,9 @@ impl CocoaSerializer<NsFont> for NsFontSerializer {
             intern_value(Value::String(object.name.clone()), objects),
         );
         root_store.insert(Key::NsSize, Value::Real(object.size as f64));
+
+        // This key remains opaque to me, but it seems to default to [`NsFont::DEFAULT_FLAGS`],
+        // so that's what we'll use here, for now.
         root_store.insert(Key::NsfFlags, Value::Integer(object.flags as i32));
     }
 }
@@ -134,9 +138,14 @@ impl CocoaSerializer<NsColor> for NsColorSerializer {
         _objects: &mut Vec<Value>,
         root_store: &mut CocoaKeyValueStore,
     ) {
+        // Using the bare minimum data required to construct an archived `NSColor` Cocoa object
+        // that can be decoded by Apple applications.
+        // Turns out, there's no need for a custom color space or an ICC profile - it's sufficient
+        // to pass in the color components under the `NSRGB` key, so long as the other keys below
+        // are populated with sensible defaults.
+
         let mut color_string = String::from(object);
         color_string.push('\0');
-
         root_store.insert(Key::NsRgb, Value::Data(color_string.into_bytes()));
         root_store.insert(Key::NsColorSpace, Value::Integer(1));
         root_store.insert(Key::NsLinearExposure, Value::Data(b"0".to_vec()));
@@ -147,6 +156,12 @@ impl CocoaSerializer<NsColor> for NsColorSerializer {
     }
 }
 
+/// Populates a [`CocoaKeyValueStore`] with the data required to construct a Cocoa object archive.
+///
+/// # Invariants
+/// The primary invariant we seek to uphold here is that the "root" object data is always the last
+/// object within the `objects` vector. This is so upstream consumers always have a simple means
+/// of referencing the root object.
 fn populate_store<S, T>(serializer: &S, object: &T, objects: &mut Vec<Value>)
 where
     S: CocoaSerializer<T> + ?Sized,
@@ -184,6 +199,14 @@ where
     Value::Dictionary(classes_store)
 }
 
+/// Interns a value into the provided vector of values and returns a [`Value::Ref`] wrapper around
+/// it, with a [`Uid`] corresponding to the index of the value in the vector.
+///
+/// If the value is already present in the vector, the reference points to the existing value.
+/// Otherwise, the value is inserted into the vector and the reference is defined accordingly.
+///
+/// This can be used for constructing more complicated Cocoa objects which store references to other
+/// objects in their own serialized form.
 fn intern_value(value: Value, objects: &mut Vec<Value>) -> Value {
     objects.iter().position(|v| v == &value).map_or_else(
         || {
