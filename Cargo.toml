@@ -5,3 +5,7 @@ edition = "2024"
 
 [dependencies]
 plist = "1"
+
+[[bin]]
+name = "cocoa-archive"
+path = "bin/cocoa-archive/main.rs"

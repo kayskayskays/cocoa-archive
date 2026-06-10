@@ -1,33 +1,15 @@
-use crate::cli::Command::{Color, Font};
-use crate::cli::parse_command;
+use crate::cli::{parse_command, Command::{Color, Font}};
 use cocoa_archive::{
-    archiver::{ArchiveError, ArchiveFormat::Base64, Archiver, NsArchiver::NsKeyedArchiver},
-    object::NsFont,
-    serializer::NsFontSerializer,
+    ArchiveError, ArchiveFormat::Base64, Archiver, NsArchiver::NsKeyedArchiver,
+    NsColor,
+    NsColorSerializer,
+    NsFont,
+    NsFontSerializer
 };
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use cocoa_archive::object::NsColor;
-use cocoa_archive::serializer::NsColorSerializer;
 
 mod cli;
-
-#[derive(Debug)]
-enum CliError {
-    Archive(ArchiveError),
-    Parse(String),
-}
-
-impl Display for CliError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CliError::Archive(err) => write!(f, "{}", err),
-            CliError::Parse(err) => write!(f, "{}", err),
-        }
-    }
-}
-
-impl Error for CliError {}
 
 fn main() -> Result<(), CliError> {
     let stdout = std::io::stdout();
@@ -52,3 +34,20 @@ fn main() -> Result<(), CliError> {
         }
     }
 }
+
+#[derive(Debug)]
+enum CliError {
+    Archive(ArchiveError),
+    Parse(String),
+}
+
+impl Display for CliError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CliError::Archive(err) => write!(f, "Error occurred while creating a Cocoa archive: {}", err),
+            CliError::Parse(err) => write!(f, "Error occurred while parsing command-line arguments: {}", err),
+        }
+    }
+}
+
+impl Error for CliError {}
