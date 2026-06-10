@@ -183,7 +183,7 @@ where
 {
     let classes_value = Value::Array(
         T::classes()
-            .into_iter()
+            .iter()
             .map(|class| Value::String(class.to_string()))
             .collect(),
     );
