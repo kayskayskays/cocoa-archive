@@ -48,6 +48,20 @@ fn parse_color(mut args: impl Iterator<Item = String>) -> Result<Command, String
     })
 }
 
+fn parse_color_component(component: &str, value: Option<String>) -> Result<f32, String> {
+    let parsed: f32 = value
+        .ok_or(format!("missing {} value", component))?
+        .trim()
+        .parse()
+        .map_err(|_| format!("invalid {} value", component))?;
+
+    if !(0.0..=1.0).contains(&parsed) {
+        Err(format!("{} value must be between 0.0 and 1.0", component))
+    } else {
+        Ok(parsed)
+    }
+}
+
 fn parse_font(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
     let mut name: Option<String> = None;
     let mut size: Option<f32> = None;
@@ -74,18 +88,4 @@ fn parse_font(mut args: impl Iterator<Item = String>) -> Result<Command, String>
         name: name.ok_or("missing --name")?,
         size: size.ok_or("missing --size")?,
     })
-}
-
-fn parse_color_component(component: &str, value: Option<String>) -> Result<f32, String> {
-    let parsed: f32 = value
-        .ok_or(format!("missing {} value", component))?
-        .trim()
-        .parse()
-        .map_err(|_| format!("invalid {} value", component))?;
-
-    if !(0.0..=1.0).contains(&parsed) {
-        Err(format!("{} value must be between 0.0 and 1.0", component))
-    } else {
-        Ok(parsed)
-    }
 }

@@ -84,7 +84,7 @@ impl ArchiverVariant {
 /// This trait defines the interface for archiving supported Cocoa objects present in the
 /// [`ArchiveTarget`] enum.
 pub trait Archiver {
-    /// A function for archiving an [`ArchiveTarget`] using the specified [`ArchiveFormat`]. The
+    /// Archives an [`ArchiveTarget`] using the specified [`ArchiveFormat`]. The
     /// serialized target will be written to the provided `writer`.
     ///
     /// # Examples
