@@ -3,6 +3,6 @@ mod b64;
 mod object;
 mod serializer;
 
-pub use archiver::{Archiver, ArchiveError, ArchiveFormat, NsArchiver};
-pub use object::{NsObject, NsColor, NsFont};
-pub use serializer::{NsFontSerializer, NsColorSerializer};
+pub use archiver::{ArchiveError, ArchiveFormat, Archiver, NsArchiver};
+pub use object::{NsColor, NsFont, NsObject};
+pub use serializer::{NsColorSerializer, NsFontSerializer};

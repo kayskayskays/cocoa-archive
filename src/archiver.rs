@@ -108,8 +108,14 @@ pub enum ArchiveError {
 impl Display for ArchiveError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArchiveError::Plist(err) => write!(f, "Encountered error while serializing plist: {}", err),
-            ArchiveError::Base64(err) => write!(f, "Encountered error while serializing base64 encoded plist data: {}", err),
+            ArchiveError::Plist(err) => {
+                write!(f, "Encountered error while serializing plist: {}", err)
+            }
+            ArchiveError::Base64(err) => write!(
+                f,
+                "Encountered error while serializing base64 encoded plist data: {}",
+                err
+            ),
         }
     }
 }

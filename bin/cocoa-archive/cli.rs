@@ -1,8 +1,16 @@
 use std::env;
 
 pub enum Command {
-    Font { name: String, size: f32 },
-    Color { red: f32, green: f32, blue: f32, alpha: f32 },
+    Font {
+        name: String,
+        size: f32,
+    },
+    Color {
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
+    },
 }
 
 pub fn parse_command() -> Result<Command, String> {
@@ -58,9 +66,14 @@ fn parse_color(mut args: impl Iterator<Item = String>) -> Result<Command, String
             "-a" | "--alpha" => alpha = parse_color_component("alpha", args.next())?,
             arg => return Err(format!("unknown argument: {}", arg)),
         }
-    };
+    }
 
-    Ok(Command::Color { red, green, blue, alpha })
+    Ok(Command::Color {
+        red,
+        green,
+        blue,
+        alpha,
+    })
 }
 
 fn parse_color_component(component: &str, value: Option<String>) -> Result<f32, String> {

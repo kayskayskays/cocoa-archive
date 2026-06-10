@@ -84,7 +84,12 @@ pub trait CocoaSerializer<T: NsObject> {
         store
     }
 
-    fn construct_object_data(&self, object: &T, objects: &mut Vec<Value>, root_store: &mut CocoaKeyValueStore);
+    fn construct_object_data(
+        &self,
+        object: &T,
+        objects: &mut Vec<Value>,
+        root_store: &mut CocoaKeyValueStore,
+    );
 }
 
 pub struct NsFontSerializer;
@@ -118,7 +123,10 @@ impl CocoaSerializer<NsColor> for NsColorSerializer {
 
         root_store.insert(Key::NsColorSpace, Value::Integer(1));
         root_store.insert(Key::NsLinearExposure, Value::Data(b"0".to_vec()));
-        root_store.insert(Key::NsComponents, Value::Data(String::from(object).into_bytes()));
+        root_store.insert(
+            Key::NsComponents,
+            Value::Data(String::from(object).into_bytes()),
+        );
     }
 }
 
