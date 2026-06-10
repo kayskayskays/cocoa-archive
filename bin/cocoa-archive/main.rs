@@ -1,3 +1,15 @@
+//! # CLI for cocoa-archive
+//!
+//! A command-line tool for constructing MacOS Cocoa archives.
+//!
+//! ## Usage:
+//!
+//! ```bash
+//! cocoa-archive color --red 1.0 --green 0.0 --blue 0.0 --alpha 1.0
+//! cocoa-archive font --name "Helvetica" --size 12.0
+//! ```
+//! This binary crate is a simple wrapper around the [`cocoa_archive`] library crate.
+
 use crate::cli::{
     Command::{Color, Font},
     parse_command,
