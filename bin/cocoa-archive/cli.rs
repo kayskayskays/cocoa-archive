@@ -18,10 +18,34 @@ pub fn parse_command() -> Result<Command, String> {
 
     let command = args.next().ok_or("missing command")?;
     match command.as_str() {
-        "font" => parse_font(args),
         "color" => parse_color(args),
+        "font" => parse_font(args),
         cmd => Err(format!("unknown command: {}", cmd)),
     }
+}
+
+fn parse_color(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
+    let mut red: f32 = 1.0;
+    let mut green: f32 = 1.0;
+    let mut blue: f32 = 1.0;
+    let mut alpha: f32 = 1.0;
+
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "-r" | "--red" => red = parse_color_component("red", args.next())?,
+            "-g" | "--green" => green = parse_color_component("green", args.next())?,
+            "-b" | "--blue" => blue = parse_color_component("blue", args.next())?,
+            "-a" | "--alpha" => alpha = parse_color_component("alpha", args.next())?,
+            arg => return Err(format!("unknown argument: {}", arg)),
+        }
+    }
+
+    Ok(Command::Color {
+        red,
+        green,
+        blue,
+        alpha,
+    })
 }
 
 fn parse_font(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
@@ -49,30 +73,6 @@ fn parse_font(mut args: impl Iterator<Item = String>) -> Result<Command, String>
     Ok(Command::Font {
         name: name.ok_or("missing --name")?,
         size: size.ok_or("missing --size")?,
-    })
-}
-
-fn parse_color(mut args: impl Iterator<Item = String>) -> Result<Command, String> {
-    let mut red: f32 = 1.0;
-    let mut green: f32 = 1.0;
-    let mut blue: f32 = 1.0;
-    let mut alpha: f32 = 1.0;
-
-    while let Some(arg) = args.next() {
-        match arg.as_str() {
-            "-r" | "--red" => red = parse_color_component("red", args.next())?,
-            "-g" | "--green" => green = parse_color_component("green", args.next())?,
-            "-b" | "--blue" => blue = parse_color_component("blue", args.next())?,
-            "-a" | "--alpha" => alpha = parse_color_component("alpha", args.next())?,
-            arg => return Err(format!("unknown argument: {}", arg)),
-        }
-    }
-
-    Ok(Command::Color {
-        red,
-        green,
-        blue,
-        alpha,
     })
 }
 

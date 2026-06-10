@@ -1,7 +1,9 @@
+use crate::ArchiveTarget::{Color, Font};
 use crate::b64::writer::Base64Writer;
-use crate::object::NsObject;
-use crate::serializer::{CocoaSerializer, Key, Value};
-use plist::Uid;
+use crate::object::{NsColor, NsFont};
+use crate::serializer::{
+    CocoaKeyValueStore, CocoaSerializer, Key, NsColorSerializer, NsFontSerializer, Value,
+};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Write;
@@ -11,23 +13,30 @@ pub enum ArchiveFormat {
     Binary,
 }
 
-pub enum NsArchiver {
-    NsKeyedArchiver,
+pub enum ArchiveTarget {
+    Color {
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
+    },
+    Font {
+        name: String,
+        size: f32,
+    },
 }
 
-impl NsArchiver {
-    fn ns_keyed_archive<T, U>(
+pub enum ArchiverVariant {
+    KeyedArchiver,
+}
+
+impl ArchiverVariant {
+    fn ns_keyed_archive(
         &self,
-        object: T,
-        serializer: U,
+        mut store: CocoaKeyValueStore,
         format: ArchiveFormat,
-        dst: impl Write,
-    ) -> Result<(), ArchiveError>
-    where
-        T: NsObject,
-        U: CocoaSerializer<T>,
-    {
-        let mut store = serializer.serialize(object);
+        writer: impl Write,
+    ) -> Result<(), ArchiveError> {
         store.insert(
             Key::Archiver,
             Value::String(String::from("NSKeyedArchiver")),
@@ -38,44 +47,50 @@ impl NsArchiver {
         let plist = plist::Value::from(root);
 
         if let ArchiveFormat::Base64 = format {
-            let mut writer = Base64Writer::new(dst);
+            let mut writer = Base64Writer::new(writer);
             plist
                 .to_writer_binary(&mut writer)
                 .map_err(ArchiveError::Plist)?;
             writer.finish().map_err(ArchiveError::Base64)
         } else {
-            plist.to_writer_binary(dst).map_err(ArchiveError::Plist)
+            plist.to_writer_binary(writer).map_err(ArchiveError::Plist)
         }
     }
 }
 
 pub trait Archiver {
-    fn archive<T, U>(
+    fn archive(
         &self,
-        object: T,
-        serializer: U,
+        target: ArchiveTarget,
         format: ArchiveFormat,
-        dst: impl Write,
-    ) -> Result<(), ArchiveError>
-    where
-        T: NsObject,
-        U: CocoaSerializer<T>;
+        writer: impl Write,
+    ) -> Result<(), ArchiveError>;
 }
 
-impl Archiver for NsArchiver {
-    fn archive<T, U>(
+impl Archiver for ArchiverVariant {
+    fn archive(
         &self,
-        object: T,
-        serializer: U,
+        target: ArchiveTarget,
         format: ArchiveFormat,
-        dst: impl Write,
-    ) -> Result<(), ArchiveError>
-    where
-        T: NsObject,
-        U: CocoaSerializer<T>,
-    {
+        writer: impl Write,
+    ) -> Result<(), ArchiveError> {
+        let store = match target {
+            Color {
+                red,
+                green,
+                blue,
+                alpha,
+            } => NsColorSerializer.serialize(NsColor {
+                red,
+                green,
+                blue,
+                alpha,
+            }),
+            Font { name, size } => NsFontSerializer.serialize(NsFont::new(name, size)),
+        };
+
         match self {
-            NsArchiver::NsKeyedArchiver => self.ns_keyed_archive(object, serializer, format, dst),
+            ArchiverVariant::KeyedArchiver => self.ns_keyed_archive(store, format, writer),
         }
     }
 }
@@ -87,7 +102,7 @@ impl From<Value> for plist::Value {
             Value::Real(real) => plist::Value::Real(real),
             Value::String(string) => plist::Value::String(string),
             Value::Data(data) => plist::Value::Data(data),
-            Value::Ref(uid) => plist::Value::Uid(Uid::new(uid)),
+            Value::Ref(uid) => plist::Value::Uid(plist::Uid::new(uid)),
             Value::Array(array) => plist::Value::Array(array.into_iter().map(Self::from).collect()),
             Value::Dictionary(store) => plist::Value::Dictionary(
                 store

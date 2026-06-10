@@ -1,11 +1,10 @@
 use crate::object::{NsColor, NsFont, NsObject};
 use std::collections::HashMap;
 
-pub type CocoaKeyValueStore = HashMap<Key, Value>;
-pub type Uid = u64;
+pub(crate) type Uid = u64;
 
 #[derive(Eq, Hash, PartialEq)]
-pub enum Key {
+pub(crate) enum Key {
     NsName,
     NsSize,
     NsfFlags,
@@ -28,7 +27,7 @@ pub enum Key {
 }
 
 #[derive(PartialEq)]
-pub enum Value {
+pub(crate) enum Value {
     Integer(i32),
     Real(f64),
     String(String),
@@ -64,9 +63,24 @@ impl From<Key> for String {
     }
 }
 
-pub trait CocoaSerializer<T: NsObject> {
+#[derive(PartialEq)]
+pub(crate) struct CocoaKeyValueStore {
+    store: HashMap<Key, Value>,
+}
+
+impl CocoaKeyValueStore {
+    pub(crate) fn insert(&mut self, key: Key, value: Value) {
+        self.store.insert(key, value);
+    }
+
+    pub(crate) fn into_iter(self) -> impl Iterator<Item = (Key, Value)> {
+        self.store.into_iter()
+    }
+}
+
+pub(crate) trait CocoaSerializer<T: NsObject> {
     fn serialize(&self, object: T) -> CocoaKeyValueStore {
-        let mut store = CocoaKeyValueStore::new();
+        let mut store = HashMap::new();
 
         let mut objects = Vec::new();
         objects.push(Value::String(String::from("$null")));
@@ -76,12 +90,15 @@ pub trait CocoaSerializer<T: NsObject> {
 
         store.insert(Key::Objects, Value::Array(objects));
 
-        let mut top_store = CocoaKeyValueStore::new();
+        let mut top_store = HashMap::new();
         top_store.insert(Key::Root, Value::Ref(root_id));
 
-        store.insert(Key::Top, Value::Dictionary(top_store));
+        store.insert(
+            Key::Top,
+            Value::Dictionary(CocoaKeyValueStore { store: top_store }),
+        );
 
-        store
+        CocoaKeyValueStore { store }
     }
 
     fn construct_object_data(
@@ -92,7 +109,7 @@ pub trait CocoaSerializer<T: NsObject> {
     );
 }
 
-pub struct NsFontSerializer;
+pub(crate) struct NsFontSerializer;
 impl CocoaSerializer<NsFont> for NsFontSerializer {
     fn construct_object_data(
         &self,
@@ -109,7 +126,7 @@ impl CocoaSerializer<NsFont> for NsFontSerializer {
     }
 }
 
-pub struct NsColorSerializer;
+pub(crate) struct NsColorSerializer;
 impl CocoaSerializer<NsColor> for NsColorSerializer {
     fn construct_object_data(
         &self,
@@ -119,8 +136,8 @@ impl CocoaSerializer<NsColor> for NsColorSerializer {
     ) {
         let mut color_string = String::from(object);
         color_string.push('\0');
-        root_store.insert(Key::NsRgb, Value::Data(color_string.into_bytes()));
 
+        root_store.insert(Key::NsRgb, Value::Data(color_string.into_bytes()));
         root_store.insert(Key::NsColorSpace, Value::Integer(1));
         root_store.insert(Key::NsLinearExposure, Value::Data(b"0".to_vec()));
         root_store.insert(
@@ -135,12 +152,14 @@ where
     S: CocoaSerializer<T> + ?Sized,
     T: NsObject,
 {
-    let mut root_store = CocoaKeyValueStore::new();
+    let mut cocoa_store = CocoaKeyValueStore {
+        store: HashMap::new(),
+    };
     let class_metadata = construct_class_metadata::<T>();
-    root_store.insert(Key::Class, intern_value(class_metadata, objects));
+    cocoa_store.insert(Key::Class, intern_value(class_metadata, objects));
 
-    serializer.construct_object_data(object, objects, &mut root_store);
-    objects.push(Value::Dictionary(root_store));
+    serializer.construct_object_data(object, objects, &mut cocoa_store);
+    objects.push(Value::Dictionary(cocoa_store));
 }
 
 fn construct_class_metadata<T>() -> Value
@@ -156,7 +175,9 @@ where
 
     let class_value = Value::String(T::class().to_string());
 
-    let mut classes_store = CocoaKeyValueStore::new();
+    let mut classes_store = CocoaKeyValueStore {
+        store: HashMap::new(),
+    };
     classes_store.insert(Key::Classes, classes_value);
     classes_store.insert(Key::Classname, class_value);
 

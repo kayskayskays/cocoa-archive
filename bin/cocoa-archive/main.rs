@@ -2,10 +2,7 @@ use crate::cli::{
     Command::{Color, Font},
     parse_command,
 };
-use cocoa_archive::{
-    ArchiveError, ArchiveFormat::Base64, Archiver, NsArchiver::NsKeyedArchiver, NsColor,
-    NsColorSerializer, NsFont, NsFontSerializer,
-};
+use cocoa_archive::{ArchiveError, ArchiveFormat, ArchiveTarget, Archiver, ArchiverVariant};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
@@ -15,29 +12,26 @@ fn main() -> Result<(), CliError> {
     let stdout = std::io::stdout();
     let cmd = parse_command().map_err(CliError::Parse)?;
 
-    let archiver = NsKeyedArchiver;
+    let archiver = ArchiverVariant::KeyedArchiver;
 
-    match cmd {
-        Font { name, size } => {
-            let object = NsFont::new(name, size);
-            let serializer = NsFontSerializer;
-            archiver
-                .archive(object, serializer, Base64, stdout.lock())
-                .map_err(CliError::Archive)
-        }
+    let target = match cmd {
         Color {
             red,
             green,
             blue,
             alpha,
-        } => {
-            let object = NsColor::new(red, green, blue, alpha);
-            let serializer = NsColorSerializer;
-            archiver
-                .archive(object, serializer, Base64, stdout.lock())
-                .map_err(CliError::Archive)
-        }
-    }
+        } => ArchiveTarget::Color {
+            red,
+            green,
+            blue,
+            alpha,
+        },
+        Font { name, size } => ArchiveTarget::Font { name, size },
+    };
+
+    archiver
+        .archive(target, ArchiveFormat::Base64, stdout.lock())
+        .map_err(CliError::Archive)
 }
 
 #[derive(Debug)]
