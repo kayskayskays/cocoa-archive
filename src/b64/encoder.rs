@@ -28,3 +28,21 @@ pub(crate) fn encode_bytes(bytes: &[u8]) -> Vec<u8> {
         })
         .collect::<Vec<u8>>()
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_encode() {
+        assert_b64(b"", "");
+        assert_b64(b"f", "Zg==");
+        assert_b64(b"fo", "Zm8=");
+        assert_b64(b"foo", "Zm9v");
+        assert_b64(b"foobar", "Zm9vYmFy");
+    }
+
+    fn assert_b64(input: &[u8], expected: &str) {
+        assert_eq!(encode_bytes(input), expected.as_bytes().to_vec());
+    }
+}

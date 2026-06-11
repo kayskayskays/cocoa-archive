@@ -51,3 +51,43 @@ impl<T: Write> Write for Base64Writer<T> {
         self.inner.flush()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn encodes_incrementally_across_writes() {
+        let mut inner = Vec::new();
+        let mut writer = Base64Writer::new(&mut inner);
+        writer.write_all(b"f").unwrap();
+        writer.write_all(b"o").unwrap();
+        writer.write_all(b"o").unwrap();
+        writer.finish().unwrap();
+
+        assert_eq!(inner, b"Zm9v");
+    }
+
+    #[test]
+    fn encodes_incrementally_across_weirdly_chunked_writes() {
+        let mut inner = Vec::new();
+        let mut writer = Base64Writer::new(&mut inner);
+        writer.write_all(b"f").unwrap();
+        writer.write_all(b"oo").unwrap();
+        writer.write_all(b"b").unwrap();
+        writer.write_all(b"ar").unwrap();
+        writer.finish().unwrap();
+
+        assert_eq!(inner, b"Zm9vYmFy");
+    }
+
+    #[test]
+    fn encodes_incrementally_across_writes_with_padding() {
+        let mut inner = Vec::new();
+        let mut writer = Base64Writer::new(&mut inner);
+        writer.write_all(b"fo").unwrap();
+        writer.finish().unwrap();
+
+        assert_eq!(inner, b"Zm8=");
+    }
+}
