@@ -29,7 +29,7 @@ fn main() {
     if let Err(err) = run() {
         eprintln!("{}", err);
         eprintln!("try `cocoa-archive --help` for usage information");
-        std::process::exit(1);
+        std::process::exit(2);
     }
 }
 
