@@ -2,6 +2,13 @@
 name = "cocoa-archive"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
+description = "Generate property list archives for supported macOS Cocoa objects."
+repository = "https://github.com/kayskayskays/cocoa-archive"
+license = "MIT"
+readme = "README.md"
+keywords = ["macos", "cocoa", "plist", "nskeyedarchiver"]
+categories = ["command-line-utilities", "encoding"]
 
 [dependencies]
 plist = "1"
