@@ -5,7 +5,7 @@
 //!
 //! This crate is primarily intended to produce property list values compatible
 //! with `NSKeyedArchiver`-style encodings used by macOS applications,
-//! especially base64-encoded plist `<data>` values.
+//! especially base64-encoded property list `<data>` values.
 //!
 //! Currently supported archive targets include:
 //!
@@ -37,7 +37,7 @@
 //! [`ArchiveFormat::Binary`] writes a binary property list.
 //!
 //! [`ArchiveFormat::Base64`] writes a base64-encoded binary property list,
-//! suitable for plist `<data>` elements.
+//! suitable for property list `<data>` elements.
 //!
 //! # Limitations
 //!
@@ -48,9 +48,9 @@
 //! macOS applications. They are not suitable as a general-purpose replacement for
 //! the archives produced by Apple’s Foundation APIs.
 
-#![deny(warnings)]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
 
 mod archiver;
 mod b64;

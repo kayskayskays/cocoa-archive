@@ -26,17 +26,6 @@ pub(crate) enum Key {
     NsColorSpace,
 }
 
-#[derive(PartialEq)]
-pub(crate) enum Value {
-    Integer(i32),
-    Real(f64),
-    String(String),
-    Data(Vec<u8>),
-    Ref(Uid),
-    Array(Vec<Value>),
-    Dictionary(CocoaKeyValueStore),
-}
-
 impl From<Key> for String {
     fn from(value: Key) -> Self {
         match value {
@@ -63,6 +52,17 @@ impl From<Key> for String {
     }
 }
 
+#[derive(PartialEq)]
+pub(crate) enum Value {
+    Integer(i32),
+    Real(f64),
+    String(String),
+    Data(Vec<u8>),
+    Ref(Uid),
+    Array(Vec<Value>),
+    Dictionary(CocoaKeyValueStore),
+}
+
 pub(crate) type CocoaKeyValueStore = HashMap<Key, Value>;
 
 pub(crate) trait CocoaSerializer<T: NsObject> {
@@ -70,8 +70,8 @@ pub(crate) trait CocoaSerializer<T: NsObject> {
     ///
     /// # Implementation Details
     ///
-    /// Generally speaking, and as a simplification, Cocoa archives in XML plist format look like the
-    /// following:
+    /// Generally speaking, and as a simplification, Cocoa archives in XML
+    /// property list format look like the following:
     ///
     /// ```xml
     /// <plist>
@@ -114,9 +114,9 @@ pub(crate) trait CocoaSerializer<T: NsObject> {
     ///
     /// Implementations of this trait are responsible for populating the
     /// remainder of the `$objects` array
-    /// (see [`CocoaSerializer::construct_object_data`], [`populate_objects`]), which includes
-    /// populating not only the "root store", but also any other objects
-    /// referenced by it.
+    /// (see [`CocoaSerializer::construct_object_data`], [`populate_objects`]),
+    /// which includes populating not only the "root store", but also any other
+    /// objects referenced by it.
     ///
     /// The returned [`CocoaKeyValueStore`] is representative of the top-level
     /// `<dict>` element. In fact, each `<dict>` element in the description
@@ -138,7 +138,7 @@ pub(crate) trait CocoaSerializer<T: NsObject> {
         store
     }
 
-    /// Constructs the `$objects` array of a Cocoa plist archive.
+    /// Constructs the `$objects` array of a Cocoa property list archive.
     ///
     /// # Implementation Requirements
     ///
@@ -150,7 +150,7 @@ pub(crate) trait CocoaSerializer<T: NsObject> {
     /// objects should be inserted into the `objects` vector. The
     /// `root_store` must be updated with [`Value::Ref`] wrappers around the
     /// [`Uid`] of those objects where required - see [`intern_value`] for a
-    /// utility enabling this.
+    /// utility facilitating this.
     fn construct_object_data(
         &self,
         object: &T,
@@ -171,6 +171,7 @@ impl CocoaSerializer<NsFont> for NsFontSerializer {
             Key::NsName,
             intern_value(Value::String(object.name.clone()), objects),
         );
+
         root_store.insert(Key::NsSize, Value::Real(object.size as f64));
 
         // This key remains opaque to me, but it seems to default to [`NsFont::DEFAULT_FLAGS`],
@@ -205,7 +206,7 @@ impl CocoaSerializer<NsColor> for NsColorSerializer {
     }
 }
 
-/// Populates the `$objects` array of a Cocoa plist archive.
+/// Populates the `$objects` array of a Cocoa property list archive.
 ///
 /// # Invariants
 ///
