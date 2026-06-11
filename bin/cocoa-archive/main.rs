@@ -2,18 +2,23 @@
 //!
 //! A command-line tool for constructing MacOS Cocoa archives.
 //!
-//! ## Usage:
+//! ## Usage
 //!
 //! ```bash
+//! cocoa-archive --help
+//! ```
+//!
+//! ## Examples
+//!
+//! ```sh
 //! cocoa-archive color --red 1.0 --green 0.0 --blue 0.0 --alpha 1.0
+//! ```
+//! ```sh
 //! cocoa-archive font --name "Helvetica" --size 12.0
 //! ```
 //! This binary crate is a simple wrapper around the [`cocoa_archive`] library crate.
 
-use crate::cli::{
-    Command::{Color, Font},
-    parse_command,
-};
+use crate::cli::{parse_command, Command, Format, GenericArgument, HELP};
 use cocoa_archive::{ArchiveError, ArchiveFormat, ArchiveTarget, Archiver, ArchiverVariant};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -21,13 +26,38 @@ use std::fmt::{Display, Formatter};
 mod cli;
 
 fn main() -> Result<(), CliError> {
-    let stdout = std::io::stdout();
-    let cmd = parse_command().map_err(CliError::Parse)?;
+    let (cmd, generic_arguments) = parse_command().map_err(CliError::Parse)?;
 
+    match cmd {
+        Command::Version => {
+            println!("cocoa-archive {}", env!("CARGO_PKG_VERSION"));
+            Ok(())
+        }
+        Command::Help => {
+            print!("{HELP}");
+            Ok(())
+        },
+        _ => run_archiver(cmd, generic_arguments),
+    }
+}
+
+fn run_archiver(cmd: Command, generic_arguments: Vec<GenericArgument>) -> Result<(), CliError> {
     let archiver = ArchiverVariant::KeyedArchiver;
 
+    let mut format = ArchiveFormat::Base64;
+    for generic_argument in generic_arguments {
+        match generic_argument {
+            GenericArgument::Format(fmt) => {
+                format = match fmt {
+                    Format::Binary => ArchiveFormat::Binary,
+                    Format::Base64 => ArchiveFormat::Base64,
+                };
+            }
+        }
+    }
+
     let target = match cmd {
-        Color {
+        Command::Color {
             red,
             green,
             blue,
@@ -38,11 +68,12 @@ fn main() -> Result<(), CliError> {
             blue,
             alpha,
         },
-        Font { name, size } => ArchiveTarget::Font { name, size },
+        Command::Font { name, size } => ArchiveTarget::Font { name, size },
+        _ => unreachable!(),
     };
 
     archiver
-        .archive(target, ArchiveFormat::Base64, stdout.lock())
+        .archive(target, format, std::io::stdout().lock())
         .map_err(CliError::Archive)
 }
 
