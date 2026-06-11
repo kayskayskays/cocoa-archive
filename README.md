@@ -39,7 +39,7 @@ nix run github:kayskayskays/cocoa-archive -- --help
 Or install it into your Nix profile:
 
 ```sh
-nix profile install github:kayskayskays/cocoa-archive
+nix profile add github:kayskayskays/cocoa-archive
 cocoa-archive --help
 ```
 
