@@ -53,7 +53,7 @@ fn run() -> Result<(), CliError> {
 fn run_archiver(cmd: Command, generic_arguments: Vec<GenericArgument>) -> Result<(), CliError> {
     let archiver = ArchiverVariant::KeyedArchiver;
 
-    let mut format = ArchiveFormat::Base64;
+    let mut format = ArchiveFormat::Binary;
     for generic_argument in generic_arguments {
         match generic_argument {
             GenericArgument::Format(fmt) => {
