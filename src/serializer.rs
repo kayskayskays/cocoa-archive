@@ -63,45 +63,94 @@ impl From<Key> for String {
     }
 }
 
-#[derive(PartialEq)]
-pub(crate) struct CocoaKeyValueStore {
-    store: HashMap<Key, Value>,
-}
-
-impl CocoaKeyValueStore {
-    pub(crate) fn insert(&mut self, key: Key, value: Value) {
-        self.store.insert(key, value);
-    }
-
-    pub(crate) fn into_iter(self) -> impl Iterator<Item = (Key, Value)> {
-        self.store.into_iter()
-    }
-}
+pub(crate) type CocoaKeyValueStore = HashMap<Key, Value>;
 
 pub(crate) trait CocoaSerializer<T: NsObject> {
+    /// Serializes an [`NsObject`] object into a [`CocoaKeyValueStore`].
+    ///
+    /// # Implementation Details
+    ///
+    /// Generally speaking, and as a simplification, Cocoa archives in XML plist format look like the
+    /// following:
+    ///
+    /// ```xml
+    /// <plist>
+    /// <dict>
+    ///     <key>$objects</key> // The objects in the archive.
+    ///     <array>
+    ///         <string>$null</string> // This will always be the zeroth object.
+    ///         <dict> // A representation of the object's class hierarchy.
+    ///             <key>$classname</key>
+    ///             <string>[CLASSNAME]</string>
+    ///             <key>$classes</key>
+    ///             <array>
+    ///                 // Classnames in the class hierarchy...
+    ///             </array>
+    ///         </dict>
+    ///         <dict> // This is the "root store", in our model.
+    ///             <key>$class</key> // This key will always be present.
+    ///             <uid>1<uid> // These UIDs are indexes into the `$objects` array.
+    ///             <key>
+    ///                 // Implementation specific object data...
+    ///             </key>
+    ///         </dict>
+    ///         <dict>
+    ///             // Other objects, also referencable by UID...
+    ///         </dict>
+    ///     </array>
+    ///     <key>$top</key>
+    ///     <dict>
+    ///         <key>root</key>
+    ///         <uid>2</uid> // This is the UID of the "root store" object.
+    ///     </dict>
+    /// </dict>
+    /// </plist>
+    /// ```
+    ///
+    /// This default function handles the creation of the `$objects` array, the
+    /// insertion of the `$null` object into the `$objects` array, the
+    /// construction of the class hierarchy object, and the construction of the
+    /// `$top` dictionary.
+    ///
+    /// Implementations of this trait are responsible for populating the
+    /// remainder of the `$objects` array
+    /// (see [`CocoaSerializer::construct_object_data`], [`populate_objects`]), which includes
+    /// populating not only the "root store", but also any other objects
+    /// referenced by it.
+    ///
+    /// The returned [`CocoaKeyValueStore`] is representative of the top-level
+    /// `<dict>` element. In fact, each `<dict>` element in the description
+    /// above is represented by a [`CocoaKeyValueStore`] in our model.
     fn serialize(&self, object: T) -> CocoaKeyValueStore {
         let mut store = HashMap::new();
-
         let mut objects = Vec::new();
 
         // The first object in the archive is always the `$null` object.
         objects.push(Value::String(String::from("$null")));
-        populate_store(self, &object, &mut objects);
-        let root_id = (objects.len() - 1) as u64;
 
+        // Populate the `$objects` array.
+        populate_objects(self, &object, &mut objects);
+        let object_count = objects.len();
         store.insert(Key::Objects, Value::Array(objects));
 
-        let mut top_store = HashMap::new();
-        top_store.insert(Key::Root, Value::Ref(root_id));
-
-        store.insert(
-            Key::Top,
-            Value::Dictionary(CocoaKeyValueStore { store: top_store }),
-        );
-
-        CocoaKeyValueStore { store }
+        // Construct the `$top` dictionary.
+        construct_and_insert_top_store((object_count - 1) as Uid, &mut store);
+        store
     }
 
+    /// Constructs the `$objects` array of a Cocoa plist archive.
+    ///
+    /// # Implementation Requirements
+    ///
+    /// Implementors are primarily required to populate the provided
+    /// `root_store` with the data of the `object` being serialized.
+    ///
+    /// While doing so, it may be the case that serialization will require
+    /// references to other objects in the archive. In such a case, those
+    /// objects should be inserted into the `objects` vector. The
+    /// `root_store` must be updated with [`Value::Ref`] wrappers around the
+    /// [`Uid`] of those objects where required - see [`intern_value`] for a
+    /// utility enabling this.
     fn construct_object_data(
         &self,
         object: &T,
@@ -156,25 +205,34 @@ impl CocoaSerializer<NsColor> for NsColorSerializer {
     }
 }
 
-/// Populates a [`CocoaKeyValueStore`] with the data required to construct a Cocoa object archive.
+/// Populates the `$objects` array of a Cocoa plist archive.
 ///
 /// # Invariants
+///
 /// The primary invariant we seek to uphold here is that the "root" object data is always the last
 /// object within the `objects` vector. This is so upstream consumers always have a simple means
 /// of referencing the root object.
-fn populate_store<S, T>(serializer: &S, object: &T, objects: &mut Vec<Value>)
+fn populate_objects<S, T>(serializer: &S, object: &T, objects: &mut Vec<Value>)
 where
     S: CocoaSerializer<T> + ?Sized,
     T: NsObject,
 {
-    let mut cocoa_store = CocoaKeyValueStore {
-        store: HashMap::new(),
-    };
+    let mut root_store = HashMap::new();
     let class_metadata = construct_class_metadata::<T>();
-    cocoa_store.insert(Key::Class, intern_value(class_metadata, objects));
+    root_store.insert(Key::Class, intern_value(class_metadata, objects));
 
-    serializer.construct_object_data(object, objects, &mut cocoa_store);
-    objects.push(Value::Dictionary(cocoa_store));
+    serializer.construct_object_data(object, objects, &mut root_store);
+    objects.push(Value::Dictionary(root_store));
+}
+
+fn construct_and_insert_top_store(root_store_uid: Uid, store: &mut CocoaKeyValueStore) {
+    let mut top_store = HashMap::new();
+    top_store.insert(Key::Root, Value::Ref(root_store_uid));
+
+    store.insert(
+        Key::Top,
+        Value::Dictionary(top_store),
+    );
 }
 
 fn construct_class_metadata<T>() -> Value
@@ -190,9 +248,7 @@ where
 
     let class_value = Value::String(T::class().to_string());
 
-    let mut classes_store = CocoaKeyValueStore {
-        store: HashMap::new(),
-    };
+    let mut classes_store = HashMap::new();
     classes_store.insert(Key::Classes, classes_value);
     classes_store.insert(Key::Classname, class_value);
 

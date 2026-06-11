@@ -37,6 +37,7 @@ pub(crate) struct NsColor {
     pub(crate) blue: f32,
     pub(crate) alpha: f32,
 }
+
 impl NsObject for NsColor {
     fn class() -> &'static str {
         "NSColor"
