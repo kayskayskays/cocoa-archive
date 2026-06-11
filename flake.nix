@@ -20,8 +20,8 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        overlay = rust-overlay.overlays.default;
-        pkgs = import nixpkgs { inherit system overlay; };
+        overlays = rust-overlay.overlays.default;
+        pkgs = import nixpkgs { inherit system overlays; };
 
         rustToolchain = pkgs.rust-bin.stable.latest.override {
           extensions = [
@@ -31,8 +31,29 @@
             "rust-analyzer"
           ];
         };
+
+        rustPlatform = pkgs.makeRustPlatform {
+          cargo = rustToolchain;
+          rustc = rustToolchain;
+        };
       in
       {
+        packages.default = rustPlatform.buildRustPackage {
+          pname = "cocoa-archiver";
+          version = "0.1.0";
+
+          src = ./.;
+
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+          };
+
+          meta = {
+            description = "A command line tool for archiving Cocoa objects.";
+            mainProgram = "cocoa-archiver";
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           packages = [
             rustToolchain
