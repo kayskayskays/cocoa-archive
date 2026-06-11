@@ -1,4 +1,3 @@
-use crate::ArchiveTarget::{Color, Font};
 use crate::b64::writer::Base64Writer;
 use crate::object::{NsColor, NsFont};
 use crate::serializer::{
@@ -8,17 +7,18 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Write;
 
-/// This enum defines the various supported archive formats.
-#[derive(Debug, Clone, Copy)]
+/// Supported archive formats.
+#[derive(Debug, Clone, Copy, Default)]
 #[non_exhaustive]
 pub enum ArchiveFormat {
-    /// The base64 encoded binary plist format.
-    Base64,
-    /// The binary plist format.
+    /// The binary property list format.
+    #[default]
     Binary,
+    /// The base64-encoded binary property list format.
+    Base64,
 }
 
-/// This enum defines the various supported Cocoa objects that can be archived.
+/// Supported Cocoa objects that can be archived.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ArchiveTarget {
@@ -42,12 +42,13 @@ pub enum ArchiveTarget {
     },
 }
 
-/// This enum defines the various [`Archiver`] implementations provided by this crate.
-#[derive(Debug, Clone, Copy)]
+/// The various [`Archiver`] implementations provided by this crate.
+#[derive(Debug, Clone, Copy, Default)]
 #[non_exhaustive]
 pub enum ArchiverVariant {
-    /// An archiver that archives plist data as key-value pairs; this archiver maps to the Cocoa
-    /// `NSKeyedArchiver` archiver instance.
+    /// An archiver that archives property list data as key-value pairs; this
+    /// archiver corresponds to the Apple `NSKeyedArchiver` archiver.
+    #[default]
     KeyedArchiver,
 }
 
@@ -71,23 +72,23 @@ impl ArchiverVariant {
             let mut writer = Base64Writer::new(writer);
             plist
                 .to_writer_binary(&mut writer)
-                .map_err(|err| ArchiveError::Plist(err.to_string()))?;
+                .map_err(|err| ArchiveError::PropertyList(err.to_string()))?;
             writer.finish().map_err(ArchiveError::Base64)
         } else {
             plist
                 .to_writer_binary(writer)
-                .map_err(|err| ArchiveError::Plist(err.to_string()))
+                .map_err(|err| ArchiveError::PropertyList(err.to_string()))
         }
     }
 }
 
-/// This trait defines the interface for archiving supported Cocoa objects present in the
-/// [`ArchiveTarget`] enum.
+/// Archives supported Cocoa objects.
 pub trait Archiver {
-    /// Archives an [`ArchiveTarget`] using the specified [`ArchiveFormat`]. The
-    /// serialized target will be written to the provided `writer`.
+    /// Archives an [`ArchiveTarget`] using the specified [`ArchiveFormat`].
     ///
-    /// # Examples
+    /// The serialized archive is written to `writer`.
+    ///
+    /// # Example
     ///
     /// ```rust
     /// use cocoa_archive::*;
@@ -98,17 +99,14 @@ pub trait Archiver {
     ///     blue: 0.0,
     ///     alpha: 1.0
     /// };
-    /// let format = ArchiveFormat::Base64;
-    /// let writer = std::io::stdout();
     ///
-    /// ArchiverVariant::KeyedArchiver.archive(target, format, writer.lock())
-    ///     .map_err(|err| {
-    ///         match err {
-    ///             ArchiveError::Plist(msg) => panic!("Plist error: {}", msg),
-    ///             ArchiveError::Base64(err) => panic!("Base64 error: {}", err),
-    ///         }
-    ///     });
-    /// ```
+    /// let mut writer = Vec::new();
+    ///
+    /// ArchiverVariant::KeyedArchiver
+    ///     .archive(target, ArchiveFormat::Base64, &mut writer)
+    ///     .unwrap();
+    ///
+    /// assert!(!writer.is_empty());
     fn archive(
         &self,
         target: ArchiveTarget,
@@ -125,7 +123,7 @@ impl Archiver for ArchiverVariant {
         writer: impl Write,
     ) -> Result<(), ArchiveError> {
         let store = match target {
-            Color {
+            ArchiveTarget::Color {
                 red,
                 green,
                 blue,
@@ -136,7 +134,9 @@ impl Archiver for ArchiverVariant {
                 blue,
                 alpha,
             }),
-            Font { name, size } => NsFontSerializer.serialize(NsFont::new(name, size)),
+            ArchiveTarget::Font { name, size } => {
+                NsFontSerializer.serialize(NsFont::new(name, size))
+            }
         };
 
         match self {
@@ -164,26 +164,25 @@ impl From<Value> for plist::Value {
     }
 }
 
-/// This enum is a wrapper around errors that may occur while attempting to archive a Cocoa object.
+/// Errors that may occur while attempting to archive a Cocoa object.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ArchiveError {
-    /// Indicative of an error that occurred while serializing a plist.
-    Plist(String),
-    /// Indicative of an error that occurred during base64 encoding of an archive.
+    /// Failed while serializing a property list archive.
+    PropertyList(String),
+    /// Failed while serializing a base64-encoded property list archive.
     Base64(std::io::Error),
 }
 
 impl Display for ArchiveError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArchiveError::Plist(err) => {
-                write!(f, "Encountered error while serializing plist: {}", err)
+            ArchiveError::PropertyList(err) => {
+                write!(f, "failed while serializing a property list archive: {err}")
             }
             ArchiveError::Base64(err) => write!(
                 f,
-                "Encountered error while serializing base64 encoded plist data: {}",
-                err
+                "failed while serializing a base64-encoded property list archive: {err}",
             ),
         }
     }

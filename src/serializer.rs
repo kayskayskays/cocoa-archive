@@ -229,10 +229,7 @@ fn construct_and_insert_top_store(root_store_uid: Uid, store: &mut CocoaKeyValue
     let mut top_store = HashMap::new();
     top_store.insert(Key::Root, Value::Ref(root_store_uid));
 
-    store.insert(
-        Key::Top,
-        Value::Dictionary(top_store),
-    );
+    store.insert(Key::Top, Value::Dictionary(top_store));
 }
 
 fn construct_class_metadata<T>() -> Value
