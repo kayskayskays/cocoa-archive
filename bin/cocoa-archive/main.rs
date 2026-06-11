@@ -1,6 +1,6 @@
 //! # CLI for `cocoa-archive`
 //!
-//! A command-line tool for constructing MacOS Cocoa archives.
+//! A command-line tool for constructing macOS Cocoa archives.
 //!
 //! This binary crate is a simple wrapper around the [`cocoa_archive`] library crate.
 //!

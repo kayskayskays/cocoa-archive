@@ -20,10 +20,10 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        overlays = rust-overlay.overlays.default;
+        overlays = [ rust-overlay.overlays.default ];
         pkgs = import nixpkgs { inherit system overlays; };
 
-        rustToolchain = pkgs.rust-bin.stable.latest.override {
+        rustToolchain = pkgs.rust-bin.stable.latest.default.override {
           extensions = [
             "rust-src"
             "rustfmt"
@@ -39,7 +39,7 @@
       in
       {
         packages.default = rustPlatform.buildRustPackage {
-          pname = "cocoa-archiver";
+          pname = "cocoa-archive";
           version = "0.1.0";
 
           src = ./.;
@@ -50,7 +50,7 @@
 
           meta = {
             description = "A command line tool for archiving Cocoa objects.";
-            mainProgram = "cocoa-archiver";
+            mainProgram = "cocoa-archive";
           };
         };
 
