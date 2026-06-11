@@ -12,9 +12,9 @@ use std::io::Write;
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum ArchiveFormat {
-    /// An archive format that uses the base64 encoded binary plist format.
+    /// The base64 encoded binary plist format.
     Base64,
-    /// An archive format that uses the binary plist format.
+    /// The binary plist format.
     Binary,
 }
 
@@ -90,7 +90,7 @@ pub trait Archiver {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoa_archive::{ArchiveFormat, ArchiveTarget, Archiver};
+    /// use cocoa_archive::*;
     ///
     /// let target = ArchiveTarget::Color {
     ///     red: 1.0,
@@ -98,7 +98,6 @@ pub trait Archiver {
     ///     blue: 0.0,
     ///     alpha: 1.0
     /// };
-    ///
     /// let format = ArchiveFormat::Base64;
     /// let writer = std::io::stdout();
     ///
