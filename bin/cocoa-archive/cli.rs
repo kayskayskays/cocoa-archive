@@ -31,15 +31,22 @@ pub fn parse_command() -> Result<(Command, Vec<GenericArgument>), String> {
     let mut generic_arguments = Vec::new();
 
     match command.as_str() {
-        "color" => parse_color(args, &mut generic_arguments).map(|command| (command, generic_arguments)),
-        "font" => parse_font(args, &mut generic_arguments).map(|command| (command, generic_arguments)),
+        "color" => {
+            parse_color(args, &mut generic_arguments).map(|command| (command, generic_arguments))
+        }
+        "font" => {
+            parse_font(args, &mut generic_arguments).map(|command| (command, generic_arguments))
+        }
         "-h" | "--help" => Ok((Command::Help, generic_arguments)),
         "-V" | "--version" => Ok((Command::Version, generic_arguments)),
         cmd => Err(format!("unknown command: {}", cmd)),
     }
 }
 
-fn parse_color(mut args: impl Iterator<Item = String>, generic_arguments: &mut Vec<GenericArgument>) -> Result<Command, String> {
+fn parse_color(
+    mut args: impl Iterator<Item = String>,
+    generic_arguments: &mut Vec<GenericArgument>,
+) -> Result<Command, String> {
     let mut red: f32 = 1.0;
     let mut green: f32 = 1.0;
     let mut blue: f32 = 1.0;
@@ -54,7 +61,7 @@ fn parse_color(mut args: impl Iterator<Item = String>, generic_arguments: &mut V
             arg => {
                 let generic_argument = parse_generic_argument("color", arg, args.next())?;
                 generic_arguments.push(generic_argument);
-            },
+            }
         }
     }
 
@@ -80,26 +87,28 @@ fn parse_color_component(component: &str, value: Option<String>) -> Result<f32, 
     }
 }
 
-fn parse_font(mut args: impl Iterator<Item = String>, generic_arguments: &mut Vec<GenericArgument>) -> Result<Command, String> {
+fn parse_font(
+    mut args: impl Iterator<Item = String>,
+    generic_arguments: &mut Vec<GenericArgument>,
+) -> Result<Command, String> {
     let mut name: Option<String> = None;
     let mut size: f32 = 10.0;
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
-            "--name" => {
-                name = Some(args.next().ok_or("missing font name")?.trim().to_owned())
-            }
+            "--name" => name = Some(args.next().ok_or("missing font name")?.trim().to_owned()),
             "--size" => {
-                size = args.next()
-                        .ok_or("missing font size")?
-                        .trim()
-                        .parse()
-                        .map_err(|_| "invalid font size")?
+                size = args
+                    .next()
+                    .ok_or("missing font size")?
+                    .trim()
+                    .parse()
+                    .map_err(|_| "invalid font size")?
             }
             arg => {
                 let generic_argument = parse_generic_argument("font", arg, args.next())?;
                 generic_arguments.push(generic_argument);
-            },
+            }
         }
     }
 
@@ -109,20 +118,25 @@ fn parse_font(mut args: impl Iterator<Item = String>, generic_arguments: &mut Ve
     })
 }
 
-fn parse_generic_argument(cmd: &str, arg: &str, value: Option<String>) -> Result<GenericArgument, String> {
+fn parse_generic_argument(
+    cmd: &str,
+    arg: &str,
+    value: Option<String>,
+) -> Result<GenericArgument, String> {
     let Some(value) = value else {
         return Err(format!("missing value for argument: {arg}"));
     };
 
     match arg {
-        "-f" | "--format" => {
-            match value.as_str() {
-                "base64" => Ok(GenericArgument::Format(Format::Base64)),
-                "binary" => Ok(GenericArgument::Format(Format::Binary)),
-                _ => Err(format!("invalid format: {}", value)),
-            }
-        }
-        _ => Err(format!("unknown argument \"{}\" for command \"{}\"", arg, cmd)),
+        "-f" | "--format" => match value.as_str() {
+            "base64" => Ok(GenericArgument::Format(Format::Base64)),
+            "binary" => Ok(GenericArgument::Format(Format::Binary)),
+            _ => Err(format!("invalid format: {}", value)),
+        },
+        _ => Err(format!(
+            "unknown argument \"{}\" for command \"{}\"",
+            arg, cmd
+        )),
     }
 }
 

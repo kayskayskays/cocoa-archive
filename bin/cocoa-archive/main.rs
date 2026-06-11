@@ -18,14 +18,22 @@
 //! ```
 //! This binary crate is a simple wrapper around the [`cocoa_archive`] library crate.
 
-use crate::cli::{parse_command, Command, Format, GenericArgument, HELP};
+use crate::cli::{Command, Format, GenericArgument, HELP, parse_command};
 use cocoa_archive::{ArchiveError, ArchiveFormat, ArchiveTarget, Archiver, ArchiverVariant};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 mod cli;
 
-fn main() -> Result<(), CliError> {
+fn main() {
+    if let Err(err) = run() {
+        eprintln!("{}", err);
+        eprintln!("try `cocoa-archive --help` for usage information");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<(), CliError> {
     let (cmd, generic_arguments) = parse_command().map_err(CliError::Parse)?;
 
     match cmd {
@@ -36,7 +44,7 @@ fn main() -> Result<(), CliError> {
         Command::Help => {
             print!("{HELP}");
             Ok(())
-        },
+        }
         _ => run_archiver(cmd, generic_arguments),
     }
 }
@@ -87,13 +95,9 @@ impl Display for CliError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             CliError::Archive(err) => {
-                write!(f, "Error occurred while creating a Cocoa archive: {}", err)
+                write!(f, "failed to create a Cocoa archive: {err}")
             }
-            CliError::Parse(err) => write!(
-                f,
-                "Error occurred while parsing command-line arguments: {}",
-                err
-            ),
+            CliError::Parse(err) => write!(f, "failed to parse command-line arguments: {err}",),
         }
     }
 }
