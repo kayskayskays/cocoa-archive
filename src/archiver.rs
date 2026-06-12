@@ -189,3 +189,49 @@ impl Display for ArchiveError {
 }
 
 impl Error for ArchiveError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command;
+
+    #[test]
+    #[ignore = "requires Apple toolchain"]
+    fn generated_color_archive_decodes_with_apple_unarchiver() {
+        let archive_target = ArchiveTarget::Color {
+            red: 1.0,
+            green: 0.0,
+            blue: 0.0,
+            alpha: 1.0,
+        };
+
+        invoke_swift_runner(archive_target, "color");
+    }
+
+    #[test]
+    #[ignore = "requires Apple toolchain"]
+    fn generated_font_archive_decodes_with_apple_unarchiver() {
+        let archive_target = ArchiveTarget::Font {
+            name: "Helvetica".to_string(),
+            size: 12.0,
+        };
+
+        invoke_swift_runner(archive_target, "font");
+    }
+
+    fn invoke_swift_runner(target: ArchiveTarget, arg: &str) {
+        let mut writer = Vec::new();
+        ArchiverVariant::KeyedArchiver
+            .archive(target, ArchiveFormat::Base64, &mut writer)
+            .expect("failed to archive NSColor");
+
+        let status = Command::new("swift")
+            .arg("tests/unarchive.swift")
+            .arg(arg)
+            .arg(String::from_utf8(writer).expect("failed to convert base64 archive to string"))
+            .status()
+            .expect("failed to invoke Swift test runner");
+
+        assert!(status.success());
+    }
+}
