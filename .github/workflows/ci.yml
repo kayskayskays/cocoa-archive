@@ -48,4 +48,4 @@ jobs:
         run: swift --version
 
       - name: Run tests
-        run: cargo test macos-compatibility -- --ignored
+        run: cargo test macos_compatibility -- --ignored
