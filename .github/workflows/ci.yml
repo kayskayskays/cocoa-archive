@@ -37,7 +37,7 @@ jobs:
       - name: Check publish package
         run: cargo publish --dry-run
 
-  ns-keyed-unarchiver-compatability:
+  ns-keyed-unarchiver-compatibility:
     name: NSKeyedUnarchiver compatibility
     runs-on: macos-latest
 
@@ -48,4 +48,4 @@ jobs:
         run: swift --version
 
       - name: Run tests
-        run: cargo test macos-compatability -- --ignored
+        run: cargo test macos-compatibility -- --ignored
