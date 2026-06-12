@@ -9,6 +9,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["macos", "cocoa", "plist", "nskeyedarchiver"]
 categories = ["command-line-utilities", "encoding"]
+exclude = [".github/**", ".envrc", "flake.nix", "flake.lock"]
 
 [dependencies]
 plist = "1"
