@@ -196,8 +196,8 @@ mod tests {
     use std::process::Command;
 
     #[test]
-    #[ignore = "requires Apple toolchain"]
-    fn generated_color_archive_decodes_with_apple_unarchiver() {
+    #[ignore = "requires macOS toolchain, including Swift and the AppKit/Foundation libraries "]
+    fn macos_compatability_generated_color_archive_decodes_with_apple_unarchiver() {
         let archive_target = ArchiveTarget::Color {
             red: 1.0,
             green: 0.0,
@@ -209,8 +209,8 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires Apple toolchain"]
-    fn generated_font_archive_decodes_with_apple_unarchiver() {
+    #[ignore = "requires macOS toolchain, including Swift and the AppKit/Foundation libraries "]
+    fn macos_compatability_generated_font_archive_decodes_with_apple_unarchiver() {
         let archive_target = ArchiveTarget::Font {
             name: "Helvetica".to_string(),
             size: 12.0,
