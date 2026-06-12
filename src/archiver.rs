@@ -107,6 +107,7 @@ pub trait Archiver {
     ///     .unwrap();
     ///
     /// assert!(!writer.is_empty());
+    /// ```
     fn archive(
         &self,
         target: ArchiveTarget,

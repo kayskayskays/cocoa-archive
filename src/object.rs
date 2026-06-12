@@ -48,12 +48,6 @@ impl NsObject for NsColor {
     }
 }
 
-impl From<NsColor> for String {
-    fn from(value: NsColor) -> Self {
-        String::from(&value)
-    }
-}
-
 impl From<&NsColor> for String {
     fn from(value: &NsColor) -> Self {
         format!(
