@@ -39,7 +39,7 @@
 //! [`ArchiveFormat::Base64`] writes a base64-encoded binary property list,
 //! suitable for property list `<data>` elements.
 //!
-//! # Limitations
+//! # Compatibility
 //!
 //! This crate is not a complete implementation of Apple's `NSKeyedArchiver`.
 //! It only supports the object types represented by [`ArchiveTarget`].
